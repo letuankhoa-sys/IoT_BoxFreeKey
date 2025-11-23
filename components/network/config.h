@@ -8,12 +8,12 @@
 /**
  * @brief Wi-Fi SSID
  */
-#define WIFI_SSID       "YourWiFiSSID"
+#define WIFI_SSID       "P.202"
 
 /**
  * @brief Wi-Fi password
  */
-#define WIFI_PASS       "YourWiFiPassword"
+#define WIFI_PASS       "@123456789"
 
 /**
  * @brief Maximum Wi-Fi retry attempts
