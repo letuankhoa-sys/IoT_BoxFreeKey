@@ -2,6 +2,8 @@
 #include "config.h"
 #include "esp_log.h"
 #include <string.h>
+#include <stddef.h>
+#include <stdbool.h>
 
 static const char *TAG = "aws_mqtt";
 

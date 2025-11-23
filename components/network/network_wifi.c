@@ -24,6 +24,7 @@ static EventGroupHandle_t s_wifi_event_group;
 static int s_retry_num = 0;
 static int s_sock = -1;
 static net_if_t s_current_iface = NET_IF_NONE;
+static bool s_wifi_inited = false;
 
 /**
  * @brief Wi-Fi event handler
@@ -66,24 +67,27 @@ bool net_init(net_if_t type)
 {
     if (type != NET_IF_WIFI) return false;
     if (s_current_iface == NET_IF_WIFI) return true;
+    if (!s_wifi_inited) {
+        esp_netif_init();
+        s_wifi_event_group = xEventGroupCreate();
+        esp_netif_create_default_wifi_sta();
 
-    esp_netif_init();
-    s_wifi_event_group = xEventGroupCreate();
-    esp_netif_create_default_wifi_sta();
+        wifi_init_config_t cfg = WIFI_INIT_CONFIG_DEFAULT();
+        ESP_ERROR_CHECK(esp_wifi_init(&cfg));
 
-    wifi_init_config_t cfg = WIFI_INIT_CONFIG_DEFAULT();
-    ESP_ERROR_CHECK(esp_wifi_init(&cfg));
+        ESP_ERROR_CHECK(esp_event_handler_instance_register(WIFI_EVENT,
+                                                            ESP_EVENT_ANY_ID,
+                                                            &wifi_event_handler,
+                                                            NULL,
+                                                            NULL));
+        ESP_ERROR_CHECK(esp_event_handler_instance_register(IP_EVENT,
+                                                            IP_EVENT_STA_GOT_IP,
+                                                            &wifi_event_handler,
+                                                            NULL,
+                                                            NULL));
 
-    ESP_ERROR_CHECK(esp_event_handler_instance_register(WIFI_EVENT,
-                                                        ESP_EVENT_ANY_ID,
-                                                        &wifi_event_handler,
-                                                        NULL,
-                                                        NULL));
-    ESP_ERROR_CHECK(esp_event_handler_instance_register(IP_EVENT,
-                                                        IP_EVENT_STA_GOT_IP,
-                                                        &wifi_event_handler,
-                                                        NULL,
-                                                        NULL));
+        s_wifi_inited = true;
+    }
 
     wifi_config_t wifi_config = {
         .sta = {

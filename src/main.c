@@ -4,6 +4,7 @@
 #include "freertos/task.h"
 #include "network.h"
 #include "aws_mqtt_client.h"
+#include "network_manager.h"
 #include "esp_log.h"
 
 #define LED_PIN GPIO_NUM_48
@@ -51,7 +52,7 @@ void config_RMT_TX()
 void set_rgb();
 
 void app_main() {
-    //config_RMT_TX();
+    config_RMT_TX();
     // while(1)
     // {
     //     ws2812_write_color(0, 0, 0);   // đỏ
@@ -62,10 +63,14 @@ void app_main() {
     //     vTaskDelay(pdMS_TO_TICKS(1000));
     // }
 
-    net_init(NET_IF_WIFI);
-    net_connect(AWS_HOST, AWS_PORT);
+    esp_log_level_set("*", ESP_LOG_ERROR);
+    ESP_LOGI("app", "Starting network manager demo");
 
-    aws_mqtt_init();
-    aws_mqtt_connect();
-    aws_mqtt_publish("esp32s3/test", "{\"hello\":\"aws-iot\"}");
+    // start network manager task
+    network_manager_start();
+
+    // Example: request manual publish after 20s
+    vTaskDelay(pdMS_TO_TICKS(20000));
+    network_manager_request_publish("{\"manual\":\"publish\"}");
+
 }

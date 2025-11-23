@@ -3,6 +3,8 @@
 
 #include <stdbool.h>
 #include <stdint.h>
+#include <stddef.h>
+
 
 /**
  * @brief Initialize AWS MQTT client
@@ -28,7 +30,7 @@ void aws_mqtt_disconnect(void);
  * @param len [in] length of payload
  * @return true if publish succeeded
  */
-bool aws_mqtt_publish(const char *topic, const uint8_t *payload, size_t len);
+extern bool aws_mqtt_publish(const char *topic, const uint8_t *payload, size_t len);
 
 /**
  * @brief Subscribe to MQTT topic
@@ -37,7 +39,7 @@ bool aws_mqtt_publish(const char *topic, const uint8_t *payload, size_t len);
  * @return true if subscription succeeded
  */
 typedef void (*aws_msg_callback_t)(const char *topic, const uint8_t *payload, size_t len);
-bool aws_mqtt_subscribe(const char *topic, aws_msg_callback_t cb);
+extern bool aws_mqtt_subscribe(const char *topic, aws_msg_callback_t cb);
 
 /**
  * @brief Service MQTT client to process incoming messages
