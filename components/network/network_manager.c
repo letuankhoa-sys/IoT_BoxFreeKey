@@ -21,7 +21,8 @@ typedef enum {
     NM_STATE_MQTT_INIT,         /**< initialize MQTT client */
     NM_STATE_MQTT_CONNECTING,   /**< connect to AWS MQTT */
     NM_STATE_MQTT_CONNECTED,    /**< MQTT connected, ready to publish/subscribe */
-    NM_STATE_ERROR              /**< error state, retry */
+    NM_STATE_ERROR,             /**< error state, retry */
+    NM_STATE_AWS_FAIL_STOP      /**< after retry three times in NM_STATE_ERROR, stop pulling*/
 } nm_state_t;
 
 /**
@@ -52,6 +53,7 @@ static TaskHandle_t nm_task_handle = NULL;
 
 static nm_state_t s_state = NM_STATE_IDLE;
 static int s_retry = 0;
+static uint8_t s_nm_fail_cnt = 0;
 
 /**
  * @brief Internal publish helper
@@ -160,11 +162,24 @@ static void nm_handle_event(nm_msg_t *msg)
             }
             break;
         case NM_STATE_ERROR:
-            ESP_LOGE(TAG, "State ERROR: retrying...");
-            vTaskDelay(pdMS_TO_TICKS(5000));
-            s_retry = 0;
-            s_state = NM_STATE_NET_INIT;
+            ESP_LOGE(TAG, "State ERROR");
+
+            s_nm_fail_cnt++;
+        
+            if (s_nm_fail_cnt >= AWS_FAIL_MAX) {
+                ESP_LOGE(TAG, "Network failed %d times -> STOP RETRY", s_nm_fail_cnt);
+                s_state = NM_STATE_AWS_FAIL_STOP;   // new state
+            } else {
+                ESP_LOGW(TAG, "Retrying init...");
+                vTaskDelay(pdMS_TO_TICKS(5000));
+                s_retry = 0;
+                s_state = NM_STATE_NET_INIT;
+            }
             break;
+        case NM_STATE_AWS_FAIL_STOP:
+          ESP_LOGE(TAG, "Fatal state: stop all retry. Waiting for external restart...");
+          vTaskDelay(pdMS_TO_TICKS(10000));
+          break;            
         default:
             break;
     }
@@ -197,9 +212,9 @@ static void nm_task(void *arg)
                     }
                     last_publish = xTaskGetTickCount();
                 }
-            } else if (s_state == NM_STATE_NET_CONNECTING || s_state == NM_STATE_NET_INIT) {
-                nm_msg_t poll = {.ev = NM_EVENT_NONE};
-                nm_handle_event(&poll);
+            } else {
+                    nm_msg_t poll = {.ev = NM_EVENT_NONE};
+                    nm_handle_event(&poll);
             }
         }
     }

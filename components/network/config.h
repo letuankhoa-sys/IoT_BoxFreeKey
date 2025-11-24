@@ -23,6 +23,12 @@
 /* ===================== AWS IoT Config ===================== */
 
 /**
+ * @brief Maximum MQTT retry attempts
+ */
+#define AWS_FAIL_MAX    3
+/* ===================== AWS IoT Config ===================== */
+
+/**
  * @brief AWS IoT endpoint
  * Format: "xxxxxx-ats.iot.<region>.amazonaws.com"
  */
